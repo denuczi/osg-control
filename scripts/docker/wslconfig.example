@@ -1,0 +1,5 @@
+# Copiar estas tres líneas a %USERPROFILE%\.wslconfig en Windows (sin estos comentarios).
+[wsl2]
+memory=5GB
+processors=2
+swap=1GB

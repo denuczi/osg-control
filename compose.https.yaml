@@ -1,0 +1,27 @@
+# Optional TLS publishing. Keep compose.yaml's HTTP listener on localhost.
+# Requires fullchain.pem and privkey.pem under secrets/tls/ and matching APP_URL.
+services:
+  tls:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 128m
+    ports:
+      - '0.0.0.0:${OSG_TLS_PORT:-8443}:8443'
+    volumes:
+      - ./docker/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./secrets/tls:/etc/caddy/certs:ro
+      - osg-caddy-data:/data
+      - osg-caddy-config:/config
+    tmpfs:
+      - /tmp:rw,nosuid,nodev,size=16m,mode=1777
+    depends_on:
+      web:
+        condition: service_healthy
+    networks: [backend]
+
+volumes:
+  osg-caddy-data:
+  osg-caddy-config:
