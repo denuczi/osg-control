@@ -1,0 +1,110 @@
+export type AssistantDevice = {
+  uuid: string;
+  name: string;
+  hostname: string;
+  system?: string;
+  cpu_name?: string | null;
+  physical_cores?: number | null;
+  logical_processors?: number | null;
+  processor_captured_at?: string | null;
+  battery_present?: boolean | null;
+  online: boolean;
+  demo: boolean;
+  ram_gib: number | null;
+  primary_disk_used_percent?: number | null;
+  primary_disk_free_gib?: number | null;
+  cpu_percent_last_sample?: number | null;
+  ram_percent_last_sample?: number | null;
+  metrics_at?: string | null;
+};
+export type ProcessRow = { pid: number | null; name: string; memory_mb: number | null };
+export type FleetProcessRow = ProcessRow & { device_uuid: string; device_name: string; online: boolean; captured_at: string | null };
+export type CompatibilityStatus = 'pass' | 'fail' | 'unknown';
+export type CompatibilityEdition = {
+  status: 'insufficient' | 'unverified';
+  ram: CompatibilityStatus;
+  storage: CompatibilityStatus;
+  os: CompatibilityStatus;
+  cpu: CompatibilityStatus;
+  gpu: CompatibilityStatus;
+  free_gb: number | null;
+  media_type: string | null;
+};
+export type CompatibilityDevice = {
+  uuid: string;
+  name: string;
+  online: boolean;
+  platform: string;
+  ram_gib: number | null;
+  captured_at: string | null;
+  metrics_at: string | null;
+  editions: { enhanced: CompatibilityEdition; legacy: CompatibilityEdition };
+};
+export type CompatibilityRequirement = {
+  title: string;
+  ram_gb: number;
+  free_gb: number;
+  ssd_required: boolean;
+  cpu: string;
+  gpu: string;
+};
+export type NetworkUsageRow = { uuid: string; name: string; rx_bytes: number; tx_bytes: number; total_bytes: number };
+export type ShutdownEventRow = { uuid: string; name: string; incidents: number; event_records: number; latest_signal_at: string | null };
+export type UsbTargetDevice = { uuid: string; name: string; hostname: string | null };
+export type UsbConnectionRow = {
+  event_uuid: string;
+  device_uuid: string;
+  device_name: string;
+  label: string | null;
+  mountpoint: string | null;
+  observed_at: string;
+};
+export type AssistantEvidence = {
+  kind: 'summary' | 'devices' | 'processes' | 'processors' | 'fleet_processes' | 'compatibility' | 'network' | 'shutdowns' | 'usb_connections';
+  title: string;
+  data: {
+    registered?: number; online?: number | boolean; offline_or_demo?: number;
+    criteria?: string;
+    average_ram_gib?: number | null; ram_measured_devices?: number;
+    total_matching?: number; returned?: number; truncated?: boolean;
+    devices?: AssistantDevice[];
+    device_name?: string; captured_at?: string | null;
+    snapshot_is_recent?: boolean; processes_stored?: number;
+    total_running_processes?: number | null; top_processes?: ProcessRow[];
+    fleet_top_processes?: FleetProcessRow[]; devices_with_samples?: number; online_only?: boolean;
+    notes?: string;
+    period?: string; period_label?: string; from?: string; to?: string; aggregation_timezone?: string;
+    rx_bytes?: number | null; tx_bytes?: number | null; total_bytes?: number | null;
+    registered_devices?: number; measured_devices?: number; days_with_data?: number;
+    unclean_incidents?: number; unclean_event_records?: number; devices_with_signals?: number;
+    network_devices?: NetworkUsageRow[]; shutdown_devices?: ShutdownEventRow[];
+    connection_events?: number; devices_with_connections?: number;
+    usb_events?: UsbConnectionRow[]; target_device?: UsbTargetDevice | null;
+    compatibility_devices?: CompatibilityDevice[];
+    requirements?: { enhanced: CompatibilityRequirement; legacy: CompatibilityRequirement };
+    source_name?: string; source_url?: string;
+  };
+};
+export type AssistantProposal = {
+  uuid: string;
+  action: 'show_message' | 'shutdown' | 'restart';
+  recipients: { uuid: string; name: string }[];
+  message: string | null;
+  expires_at: string;
+  status: 'pending';
+};
+export type AssistantReport = {
+  kind: 'fleet' | 'device';
+  uuid: string;
+  status: 'pending' | 'processing' | 'ready' | 'failed';
+  status_url: string;
+};
+export type AssistantAnswer = { answer: string; evidence: AssistantEvidence[]; proposal: AssistantProposal | null; report?: AssistantReport };
+export type ConversationMessage = {
+  id: number;
+  role: 'user' | 'assistant';
+  content: string;
+  evidence?: AssistantEvidence[];
+  proposal?: AssistantProposal | null;
+  report?: AssistantReport;
+};

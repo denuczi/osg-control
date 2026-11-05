@@ -1,0 +1,187 @@
+/* OSG Nodo Control — application workspace refinements.
+ * Scoped styles keep the chat's viewport behavior isolated from the other pages.
+ * Do not put fixed heights on content elsewhere in the administration panel.
+ */
+
+/* Use compact, native-looking scrollbars in long administrative views. */
+html{scrollbar-width:thin;scrollbar-color:#bdc9d8 #f4f7fb;scrollbar-gutter:auto}
+body::-webkit-scrollbar,.app-main::-webkit-scrollbar,.page-content::-webkit-scrollbar{width:10px;height:10px}
+body::-webkit-scrollbar-thumb,.app-main::-webkit-scrollbar-thumb,.page-content::-webkit-scrollbar-thumb{background:#c0cddd;border-radius:999px;border:2px solid #f4f7fb}
+body::-webkit-scrollbar-track,.app-main::-webkit-scrollbar-track,.page-content::-webkit-scrollbar-track{background:#f4f7fb}
+
+/* Assistant: one scrollable transcript, with a composer that stays in the layout.
+   The whole workspace occupies the available viewport; the window doesn't scroll. */
+.app-shell--immersive{height:100dvh;min-height:0;overflow:hidden}
+.app-shell--immersive .app-main{height:100dvh;min-height:0;overflow:hidden}
+.app-shell--immersive .page-content--immersive{height:100%;min-height:0;max-width:none;overflow:hidden;padding:18px clamp(16px,2.3vw,32px) 14px}
+.assistant-screen{height:100%;min-height:0;max-width:1560px;margin:0 auto;display:flex;flex-direction:column}
+.assistant-screen .ai-page-title{margin:0 0 13px;flex:none;align-items:center;gap:16px}
+.assistant-screen .ai-page-title h1{font-size:24px;margin:0 0 4px}
+.assistant-screen .ai-page-title p{margin:0;color:#52657d;max-width:780px}
+.assistant-help-disclosure{position:relative;flex:none;z-index:5;color:#3a5777}
+.assistant-help-disclosure summary{display:flex;align-items:center;gap:8px;min-height:36px;cursor:pointer;list-style:none;padding:7px 11px;border:1px solid #d5e0ec;border-radius:9px;background:#fff;font-size:12.5px;font-weight:600;user-select:none}
+.assistant-help-disclosure summary::-webkit-details-marker{display:none}
+.assistant-help-disclosure summary:hover{background:#f7f9fc}
+.assistant-help-disclosure[open] summary{border-color:#9fb8d6}
+.assistant-help-content{position:absolute;right:0;top:calc(100% + 8px);width:min(355px,calc(100vw - 32px));padding:11px 16px;border-radius:12px;border:1px solid #cfddea;background:#fff;box-shadow:0 16px 42px rgba(28,50,81,.15)}
+.assistant-help-content p{display:flex;align-items:flex-start;gap:10px;margin:0;padding:10px 0;font-size:12.5px;line-height:1.5;color:#415670}
+.assistant-help-content p+p{border-top:1px solid #ebeff5}
+.assistant-help-content svg{flex:none;color:#436993;margin-top:2px}
+
+/* Stable atmospheric base, independent of transcript scrolling. Large, soft glows
+   wander on independent closed paths rather than sweeping across the viewport. */
+.assistant-screen>.ai-chat{
+  flex:1;min-width:0;min-height:0;max-height:none;height:auto;
+  display:flex;flex-direction:column;position:relative;overflow:hidden;
+  background:
+    radial-gradient(ellipse 88% 90% at 6% -8%, rgba(251,227,207,.10),transparent 80%),
+    radial-gradient(ellipse 94% 82% at 97% 0%, rgba(211,210,246,.095),transparent 80%),
+    #fff;
+  border:1px solid #d4dfec;border-radius:15px;
+  box-shadow:0 2px 14px rgba(26,52,85,.035);isolation:isolate;
+}
+.assistant-screen>.ai-chat::before,
+.assistant-screen>.ai-chat::after{
+  content:"";position:absolute;z-index:0;pointer-events:none;
+  width:112%;height:105%;border-radius:50%;
+  inset:auto;opacity:1;
+}
+.assistant-screen>.ai-chat::before{
+  top:-41%;left:-29%;
+  background:radial-gradient(ellipse at center,
+    rgba(250,208,184,.28) 0%,
+    rgba(253,226,207,.13) 38%,
+    rgba(253,226,207,0) 76%);
+  animation:assistantGlowWarmOrbit 34s ease-in-out infinite;
+}
+.assistant-screen>.ai-chat::after{
+  top:-36%;right:-31%;
+  background:radial-gradient(ellipse at center,
+    rgba(201,195,241,.24) 0%,
+    rgba(218,220,248,.10) 41%,
+    rgba(218,220,248,0) 77%);
+  animation:assistantGlowCoolOrbit 43s ease-in-out -11s infinite;
+}
+.assistant-screen .ai-chat-history{position:relative;z-index:1;flex:1;min-height:0;max-height:none;overflow-y:auto;overflow-x:hidden;padding:24px clamp(14px,3vw,38px);background:transparent;overscroll-behavior:contain;scroll-behavior:auto}
+.assistant-screen .ai-chat-history::before{content:none}
+.assistant-screen .ai-chat-history > *{position:relative;z-index:1}
+.assistant-screen .ai-chat-composer{flex:none;position:relative;z-index:2;padding:11px clamp(12px,3vw,32px) calc(10px + env(safe-area-inset-bottom, 0px));background:linear-gradient(180deg,rgba(255,255,255,.98) 0%,#fff 100%);border-top:1px solid #e1e7ef}
+.assistant-screen .ai-compose-form{max-width:1080px;margin:0 auto;align-items:flex-end;gap:10px;padding:7px 8px 7px 14px;background:#fff;border:1px solid #c9d6e7;border-radius:13px;box-shadow:none}
+.assistant-screen .ai-compose-form:focus-within{border-color:#537da9;box-shadow:0 0 0 3px rgba(54,104,161,.11)}
+.assistant-screen .ai-compose-form textarea{display:block;flex:1;min-width:0;width:100%;height:48px;min-height:48px;max-height:160px;overflow-y:auto;resize:none;padding:12px 4px 10px;font-size:14px;line-height:1.55;border:0;outline:0;background:transparent;color:#243850}
+.assistant-screen .ai-send-button{width:40px;height:40px;flex:none;border-radius:10px;background:#265a9b;color:#fff}
+.assistant-screen .ai-send-button:hover:not(:disabled){background:#1a487e;transform:none}
+.assistant-screen .ai-send-button:disabled{background:#aebfd5;opacity:.7}
+.assistant-screen .ai-chat-disclaimer{max-width:1080px;margin:8px auto 0;color:#576a83;font-size:11.5px;line-height:1.45}
+.assistant-screen .ai-chat-disclaimer svg{color:#426a9a}
+.assistant-screen .ai-welcome{max-width:800px;margin:clamp(12px,6vh,58px) auto 20px;padding:16px 8px 22px;border:0;background:transparent;backdrop-filter:none;box-shadow:none;text-align:center}
+.assistant-screen .ai-welcome-mark{width:48px;height:48px;margin:0 auto 16px;border-radius:13px;border:1px solid #c7d6ea;background:#f3f7fc;color:#315b91;box-shadow:none}
+.assistant-screen .ai-welcome h2{font-size:clamp(22px,2vw,27px);line-height:1.23;letter-spacing:-.55px;color:#1b304c;margin:0 0 10px}
+.assistant-screen .ai-welcome p{font-size:13.5px;max-width:570px;margin:0 auto;color:#465f7c;line-height:1.65}
+.assistant-screen .ai-suggestions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));margin:27px auto 0;gap:10px;text-align:left;max-width:710px}
+.assistant-screen .ai-suggestions button{min-height:55px;padding:11px 14px;border:1px solid #cbdbea;background:rgba(255,255,255,.92);border-radius:10px;color:#284360;box-shadow:0 1px 4px rgba(29,58,91,.025);transform:none}
+.assistant-screen .ai-suggestions button:hover:not(:disabled){background:#fff;border-color:#8faacb;box-shadow:0 2px 9px rgba(29,58,91,.075);transform:none}
+.assistant-screen .ai-chat-user .ai-chat-bubble{background:#e9f1fc;color:#203e64;border:1px solid #d8e4f3;box-shadow:none}
+.assistant-screen .ai-chat-assistant .ai-chat-bubble{background:#fff;border:1px solid #e0e7f0;color:#233850;box-shadow:0 2px 8px rgba(26,50,80,.04)}
+.assistant-screen .ai-chat-bubble{max-width:min(92%,980px);min-width:0;border-radius:12px;font-size:13.5px;line-height:1.65;backface-visibility:hidden}
+.assistant-screen .ai-chat-addons{width:calc(100% - 46px);max-width:1100px;min-width:0;margin:0 0 18px 46px}
+.assistant-screen .ai-evidence{min-width:0}
+.assistant-screen .ai-evidence-body{min-width:0}
+.assistant-screen .ai-table-scroll{min-width:0;max-width:100%;overflow-x:auto;overscroll-behavior-x:contain}
+.assistant-screen .ai-table{min-width:590px}
+/* Native, restrained scrollbars. No forced browser-wide custom scrollbars. */
+.assistant-screen .ai-chat-history,.assistant-screen .ai-table-scroll,.assistant-screen .ai-compose-form textarea{scrollbar-width:thin;scrollbar-color:#c2cfdd transparent;scrollbar-gutter:stable}
+.assistant-screen .ai-chat-history::-webkit-scrollbar,.assistant-screen .ai-table-scroll::-webkit-scrollbar,.assistant-screen .ai-compose-form textarea::-webkit-scrollbar{width:5px;height:5px}
+.assistant-screen .ai-chat-history::-webkit-scrollbar-thumb,.assistant-screen .ai-table-scroll::-webkit-scrollbar-thumb,.assistant-screen .ai-compose-form textarea::-webkit-scrollbar-thumb{background:#c2cfdd;border-radius:999px}
+.assistant-screen .ai-chat-history::-webkit-scrollbar-track,.assistant-screen .ai-table-scroll::-webkit-scrollbar-track,.assistant-screen .ai-compose-form textarea::-webkit-scrollbar-track{background:transparent}
+
+/* Each closed, multi-axis path is intentionally different. The mismatch in periods
+   prevents a pendulum-like left-to-right sweep without introducing randomness. */
+@keyframes assistantGlowWarmOrbit{
+  0%,100%{transform:translate3d(-2%,-5%,0)}
+  24%{transform:translate3d(4%,-1%,0)}
+  51%{transform:translate3d(6%,5%,0)}
+  76%{transform:translate3d(-3%,7%,0)}
+}
+@keyframes assistantGlowCoolOrbit{
+  0%,100%{transform:translate3d(3%,4%,0)}
+  27%{transform:translate3d(-4%,6%,0)}
+  53%{transform:translate3d(-6%,-3%,0)}
+  79%{transform:translate3d(2%,-6%,0)}
+}
+
+/* Dashboard: independent, compact system widgets, restrained semantic colors. */
+.operational-widgets,.operational-widgets.has-four{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px;margin:0 0 18px;border:0;background:transparent;border-radius:0;overflow:visible}
+.operational-widgets.has-four{grid-template-columns:repeat(4,minmax(0,1fr))}
+.operational-widgets .operational-item{position:relative;display:flex;flex-direction:row;align-items:flex-start;gap:13px;min-width:0;min-height:115px;padding:18px;border:1px solid #d6e0ec;border-radius:14px;background:#fff;box-shadow:0 2px 8px rgba(28,53,85,.035)}
+.operational-widgets .operational-icon{width:38px;height:38px;border-radius:11px;background:#eaf1f9;color:#426997;flex:none}
+.operational-widgets .operational-text{display:flex;flex-direction:column;min-width:0;gap:2px}
+.operational-widgets .operational-text>span{font-size:12px;font-weight:580;color:#526780}
+.operational-widgets .operational-text strong{font-variant-numeric:tabular-nums;font-size:clamp(22px,2vw,29px);font-weight:730;letter-spacing:-.65px;line-height:1.2;color:#1c304a;margin:3px 0 2px}
+.operational-widgets .operational-text small{font-size:11.5px;line-height:1.4;color:#66778b}
+.operational-widgets .widget-online.has-online .operational-icon{background:#eaf5ef;color:#26764b}
+.operational-widgets .widget-offline.has-disconnected .operational-icon{background:#fff4e7;color:#91602e}
+.operational-widgets .widget-cpu .operational-icon{background:#f0f0f8;color:#565f95}
+.fleet-panel,.history-panel,.history-commands{border:1px solid #d9e2ed;border-radius:14px;overflow:hidden;box-shadow:0 2px 8px rgba(27,53,86,.035)}
+.fleet-panel .section-head,.history-panel .section-head,.history-commands .section-head{background:#fff}
+.fleet-panel .data-table th{background:#f8fafc;color:#556981;border-bottom:1px solid #e2eaf2}
+.fleet-panel .data-table td{border-color:#edf1f6}
+.fleet-panel .data-table tbody tr:hover{background:#f8fbff}
+.fleet-panel .device-identity-icon{background:#eff4fa;color:#476d9a}
+.fleet-panel .fleet-filters{background:#eef2f6}
+.fleet-panel .fleet-filters button.selected{color:#264b78;border:1px solid #d5e0eb;box-shadow:0 1px 2px rgba(29,51,81,.055)}
+.fleet-panel .resource-fill{background:#6d92c2}
+.fleet-panel .resource-fill.is-high{background:#c34251}
+
+/* Drive capacity: blue for normal occupancy, red at 90% used. Preserve numbers and units. */
+.infra-storage-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:9px 0 7px;font-size:12px;color:#5b6c80}
+.infra-storage-heading strong{font-weight:700;color:#315c96;font-variant-numeric:tabular-nums;font-size:13px}
+.infra-storage-heading strong.is-critical{color:#b12b3d}
+.infra-storage-bar{height:8px;border-radius:5px;background:#e5eaf0;overflow:hidden}
+.infra-storage-bar>div{height:100%;border-radius:5px;background:#3478c6;transition:width .2s ease}
+.infra-storage-bar.is-critical>div{background:#c33448}
+.infra-storage-unknown{font-size:12px;color:#65778a;margin:6px 0 0}
+.infra-storage-alert{font-size:12px;color:#a32d3f;margin:9px 0 0;line-height:1.4}
+.infra-volume-foot{color:#586b80;font-size:12px;margin-top:7px}
+
+@media (max-width:1180px){
+  .operational-widgets.has-four{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:880px){
+  .operational-widgets,.operational-widgets.has-four{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .assistant-screen .ai-page-title{align-items:flex-start}
+}
+@media (max-width:720px){
+  .app-shell--immersive .page-content--immersive{height:calc(100dvh - 49px);padding:10px 10px 8px}
+  .assistant-screen .ai-page-title{margin:0 4px 9px;align-items:center}
+  .assistant-screen .ai-page-title h1{font-size:20px}
+  .assistant-screen .ai-page-title p{font-size:12px;line-height:1.35}
+  .assistant-help-disclosure summary{font-size:0;width:36px;height:36px;justify-content:center;padding:6px}
+  .assistant-help-disclosure summary svg{width:18px;height:18px}
+  .assistant-screen>.ai-chat{border-radius:12px}
+  .assistant-screen .ai-chat-history{padding:14px 11px}
+  .assistant-screen .ai-chat-composer{padding:8px 9px calc(7px + env(safe-area-inset-bottom, 0px))}
+  .assistant-screen .ai-chat-disclaimer{font-size:10.5px}
+  .assistant-screen .ai-welcome{padding:15px 5px;margin:clamp(4px,5vh,30px) auto 14px}
+  .assistant-screen .ai-welcome h2{font-size:21px}
+  .assistant-screen .ai-suggestions{grid-template-columns:1fr;gap:8px;margin-top:20px}
+  .assistant-screen .ai-suggestions button{min-height:44px;padding:10px 12px}
+  .assistant-screen .ai-chat-addons{width:calc(100% - 36px);margin-left:36px}
+  .assistant-screen .ai-chat-bubble{max-width:95%}
+}
+@media (max-width:450px){
+  .operational-widgets,.operational-widgets.has-four{grid-template-columns:1fr}
+  .operational-widgets .operational-item{min-height:90px;padding:14px}
+  .assistant-screen .ai-page-title p{display:none}
+}
+@media (max-height:620px){
+  .app-shell--immersive .page-content--immersive{padding-top:7px;padding-bottom:6px}
+  .assistant-screen .ai-page-title{margin-bottom:7px}
+  .assistant-screen .ai-welcome{margin-top:4px}
+  .assistant-screen .ai-chat-disclaimer{display:none}
+}
+@media (prefers-reduced-motion:reduce){
+  .assistant-screen .ai-suggestions button,.infra-storage-bar>div{transition:none}
+  .assistant-screen>.ai-chat::before,
+  .assistant-screen>.ai-chat::after{animation:none;transform:none}
+}
