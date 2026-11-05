@@ -253,7 +253,8 @@ son para la computadora de compilación, no para cada equipo de destino.
 
 ## Administración habitual
 
-Escribe estos comandos en la **terminal del anfitrión**, desde la carpeta del
+Escribe estos comandos en la **terminal del equipo donde instalaste el servidor
+OSG Nodo Control (Laravel)**, desde la carpeta del
 proyecto que contiene `compose.yaml`: la terminal Linux o, en Windows, la
 terminal de Debian WSL2. Se escriben fuera de los contenedores. Los comandos
 `docker compose exec` se introducen también allí; Docker ejecuta la operación
@@ -272,10 +273,12 @@ indicada dentro del servicio correspondiente.
 
 ### Configurar el proveedor, el modelo y la clave de IA
 
-**Este paso se ejecuta fuera de Docker**, en la terminal Linux o Debian WSL2,
+**Este paso se ejecuta en el equipo del servidor Laravel, fuera de los
+contenedores**, en la terminal Linux o Debian WSL2,
 desde la carpeta del proyecto. Requiere Python 3 en ese anfitrión y una
 instalación ya configurada. Puede hacerse con los contenedores encendidos o
-apagados; no necesita Docker Engine en marcha porque solo modifica un archivo:
+apagados y no necesita Docker Engine en marcha. La comprobación del modelo sí
+requiere acceso HTTPS al proveedor:
 
 ```bash
 python3 scripts/docker/configure.py api
@@ -286,6 +289,14 @@ identificador del modelo y la clave API. Para un proveedor compatible también
 solicita el endpoint HTTPS. La clave se introduce sin mostrarse en pantalla y
 se guarda en **`secrets/laravel.env`**, junto con el proveedor y el modelo.
 La pantalla de configuración del panel no permite introducir estas credenciales.
+
+Antes de guardar muestra proveedor, modelo y endpoint, con la clave oculta, y
+pide confirmación con **No por defecto**. Si confirmas, comprueba el identificador
+en el catálogo del proveedor. Un modelo inexistente, un rechazo de credenciales
+o un fallo de conexión impiden guardar y conservan la configuración anterior.
+Para endpoints compatibles que responden 404/405 a `GET /models`, guardar sin
+verificación exige escribir expresamente `GUARDAR_SIN_VERIFICAR`. La comprobación
+del catálogo no prueba generación de respuestas, saldo ni cuotas.
 
 Cuando termines, **Docker Engine debe estar en marcha**. En esa misma terminal
 del anfitrión y carpeta del proyecto, aplica los cambios recreando los servicios:
@@ -316,9 +327,15 @@ docker compose exec app php artisan nodo:admin
 ```
 
 Introduce el nombre visible, el **mismo correo de la cuenta existente** y la
-nueva contraseña, de al menos 12 caracteres. Así se actualizan el nombre y la
-contraseña de esa cuenta. Si introduces un correo distinto, se crea otra cuenta
-administradora y la anterior permanece activa: no se cambia su correo.
+nueva contraseña, de al menos 12 caracteres y hasta 72 bytes. El comando avisa si
+encontró una cuenta existente, pide repetir la contraseña y muestra un resumen
+antes de confirmar la creación o actualización, con **No por defecto**. Solo
+después de confirmar se guardan los datos. Una cancelación o una contraseña
+distinta al repetirla deja la cuenta anterior intacta.
+
+Con el mismo correo se actualizan el nombre y la contraseña de esa cuenta. Si
+introduces un correo distinto y confirmas, se crea otra cuenta administradora
+y la anterior permanece activa: no se cambia su correo.
 
 Actualmente no hay una pantalla web para gestionar usuarios ni un flujo de
 recuperación de contraseña por correo. Para usar otra cuenta ya creada, cierra

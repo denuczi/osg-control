@@ -5,12 +5,16 @@ Credentials never appear on the command line or in Compose variables.
 import base64
 import getpass
 import ipaddress
+import json
 import os
 from pathlib import Path
 import re
 import secrets
 import sys
+import warnings
+from urllib.error import HTTPError, URLError
 from urllib.parse import urlsplit
+from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 ROOT = Path(__file__).resolve().parents[2]
 RUNTIME = ROOT / 'secrets'
@@ -29,7 +33,7 @@ def get_value(lines, key, default=''):
         if line.startswith(key + '='):
             value = line.split('=', 1)[1].strip()
             if len(value) >= 2 and value[0] == '"' and value[-1] == '"':
-                return value[1:-1].replace('\\"', '"').replace('\\\\', '\\')
+                return value[1:-1].replace('\\"', '"').replace('\\\\', '\\').replace('\\$', '$')
             return value
     return default
 
@@ -41,7 +45,7 @@ def set_value(lines, key, value):
         raise ValueError('Valor inválido con salto de línea')
     # Minimal dotenv double quote escaping, exact for user-provided names/password-free values.
     if not re.fullmatch(r'[A-Za-z0-9_./:@+,=-]*', value):
-        value = '"' + value.replace('\\', '\\\\').replace('"', '\\"') + '"'
+        value = '"' + value.replace('\\', '\\\\').replace('"', '\\"').replace('$', '\\$') + '"'
     changed = False
     for i, line in enumerate(lines):
         if line.startswith(key + '='):
@@ -81,20 +85,71 @@ def update_name(lines):
     return lines
 
 
+def confirm(prompt):
+    return input(f'{prompt} [s/N]: ').strip().lower() in ('s', 'si', 'sí')
+
+
+class NoCredentialRedirect(HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        # Never forward the bearer key to a redirected destination.
+        return None
+
+
+class ModelCatalogUnavailable(ValueError):
+    pass
+
+
+def verify_model(provider, model, key, endpoint):
+    request = Request(endpoint.rstrip('/') + '/models', headers={
+        'Authorization': 'Bearer ' + key,
+        'Accept': 'application/json',
+        'User-Agent': 'OSG-Nodo-Control-Setup',
+    })
+    try:
+        with build_opener(NoCredentialRedirect()).open(request, timeout=10) as response:
+            raw = response.read(1024 * 1024 + 1)
+    except HTTPError as exc:
+        if provider == 'compatible' and exc.code in (404, 405):
+            raise ModelCatalogUnavailable('El proveedor no expone un catálogo GET /models.') from None
+        if exc.code in (401, 403):
+            raise ValueError('El proveedor rechazó la clave o sus permisos. No se guardó ningún cambio.') from None
+        raise ValueError(f'No se pudo verificar el modelo (HTTP {exc.code}). No se guardó ningún cambio.') from None
+    except (URLError, OSError, ValueError):
+        raise ValueError('No se pudo conectar al proveedor de forma segura. Revisa Internet, TLS y el endpoint. No se guardó ningún cambio.') from None
+    if len(raw) > 1024 * 1024:
+        raise ValueError('El catálogo del proveedor supera el límite admitido. No se guardó ningún cambio.')
+    try:
+        catalog = json.loads(raw)
+    except (ValueError, UnicodeError):
+        raise ValueError('El proveedor no devolvió un catálogo JSON válido. No se guardó ningún cambio.') from None
+    models = catalog.get('data') if isinstance(catalog, dict) else None
+    if not isinstance(models, list):
+        raise ValueError('El catálogo del proveedor tiene un formato inesperado. No se guardó ningún cambio.')
+    if not any(isinstance(item, dict) and item.get('id') == model and item.get('active', True) is not False for item in models):
+        raise ValueError('El modelo no aparece disponible en el catálogo de esta cuenta. Revisa su identificador exacto. No se guardó ningún cambio.')
+
+
 def update_api(lines):
-    provider = question('IA (groq/openai/compatible/ninguna)', 'ninguna').lower()
+    # Work on a copy: cancellation and validation failures must preserve input.
+    updated = lines.copy()
+    provider = question('IA (groq/openai/compatible/ninguna)', get_value(lines, 'REPORT_AI_PROVIDER', 'ninguna')).lower()
     if provider not in ('groq', 'openai', 'compatible', 'ninguna'):
         raise ValueError('Proveedor no admitido')
     if provider == 'ninguna':
-        set_value(lines, 'NODO_ASSISTANT_ENABLED', 'false')
-        print('Asistente IA desactivado. Credenciales anteriores conservadas.')
-        return lines
+        print('Se desactivará el asistente conversacional. Las credenciales y la opción de IA de los PDF se conservarán.')
+        if not confirm('¿Guardar esta desactivación?'):
+            return None
+        set_value(updated, 'NODO_ASSISTANT_ENABLED', 'false')
+        return updated
     model_default = {'groq': 'openai/gpt-oss-20b', 'openai': 'gpt-4.1-mini', 'compatible': ''}[provider]
+    if provider == get_value(lines, 'REPORT_AI_PROVIDER'):
+        model_default = get_value(lines, 'REPORT_AI_MODEL', model_default)
     model = question('Modelo', model_default)
-    if not model or len(model) > 120 or any(c.isspace() for c in model):
+    if not model or len(model) > 120 or not model.isprintable() or any(c.isspace() for c in model):
         raise ValueError('Modelo inválido')
+    endpoint = {'groq': 'https://api.groq.com/openai/v1', 'openai': 'https://api.openai.com/v1'}.get(provider)
     if provider == 'compatible':
-        endpoint = question('Endpoint compatible HTTPS (ej. https://api.ejemplo.com/v1)')
+        endpoint = question('Endpoint compatible HTTPS (ej. https://api.ejemplo.com/v1)', get_value(lines, 'REPORT_AI_COMPATIBLE_URL'))
         parsed = urlsplit(endpoint)
         host = parsed.hostname or ''
         try:
@@ -104,19 +159,35 @@ def update_api(lines):
             numeric_ip = False
         if (parsed.scheme != 'https' or not host or '.' not in host or numeric_ip or
             host.endswith(('.local', '.internal')) or parsed.username or parsed.password or
-            parsed.query or parsed.fragment or len(endpoint) > 250):
+            parsed.query or parsed.fragment or len(endpoint) > 250 or
+            not endpoint.isascii() or any(c.isspace() or ord(c) < 32 or ord(c) == 127 for c in endpoint)):
             raise ValueError('Endpoint HTTPS público inválido')
-        set_value(lines, 'REPORT_AI_COMPATIBLE_URL', endpoint)
-    key = getpass.getpass('Clave de API (no se mostrará): ')
-    if not key or len(key) > 4096:
-        raise ValueError('Clave vacía o demasiado larga')
+        set_value(updated, 'REPORT_AI_COMPATIBLE_URL', endpoint)
+    try:
+        with warnings.catch_warnings():
+            warnings.simplefilter('error', getpass.GetPassWarning)
+            key = getpass.getpass('Clave de API (no se mostrará): ')
+    except getpass.GetPassWarning:
+        raise ValueError('Se requiere una terminal que permita ocultar la clave. No se guardó ningún cambio.') from None
+    if not key or len(key) > 4096 or any(ord(c) < 33 or ord(c) > 126 for c in key):
+        raise ValueError('Clave vacía, demasiado larga o con espacios/caracteres no admitidos')
+    print(f'Proveedor: {provider}\nModelo: {model}\nEndpoint: {endpoint}\nClave API: [oculta]')
+    print('Se habilitará el asistente conversacional. La preferencia de conclusiones IA de los PDF no cambiará.')
+    if not confirm('¿Verificar el modelo con este proveedor y guardar la configuración?'):
+        return None
+    try:
+        verify_model(provider, model, key, endpoint)
+        print('Modelo encontrado en el catálogo. Esto no comprueba generación, cuotas ni facturación.')
+    except ModelCatalogUnavailable:
+        print('Este proveedor compatible no permite comprobar el modelo con GET /models.')
+        if input('Para guardar SIN verificar el modelo, escribe GUARDAR_SIN_VERIFICAR: ').strip() != 'GUARDAR_SIN_VERIFICAR':
+            return None
     key_name = {'groq': 'GROQ_API_KEY', 'openai': 'OPENAI_API_KEY', 'compatible': 'REPORT_AI_COMPATIBLE_KEY'}[provider]
-    set_value(lines, key_name, key)
-    set_value(lines, 'REPORT_AI_PROVIDER', provider)
-    set_value(lines, 'REPORT_AI_MODEL', model)
-    set_value(lines, 'NODO_ASSISTANT_ENABLED', 'true')
-    print('Configuración de IA guardada localmente; el asistente debe habilitarse en el panel si el usuario lo desactiva.')
-    return lines
+    set_value(updated, key_name, key)
+    set_value(updated, 'REPORT_AI_PROVIDER', provider)
+    set_value(updated, 'REPORT_AI_MODEL', model)
+    set_value(updated, 'NODO_ASSISTANT_ENABLED', 'true')
+    return updated
 
 
 def update_network(app_lines, compose_lines):
@@ -195,7 +266,10 @@ def run(mode):
     if mode == 'name':
         update_name(lines)
     elif mode == 'api':
-        update_api(lines)
+        lines = update_api(lines)
+        if lines is None:
+            print('Configuración cancelada. No se guardó ningún cambio.')
+            return
     elif mode == 'network':
         lines, compose = update_network(lines, compose)
     elif mode == 'tls':
@@ -203,13 +277,14 @@ def run(mode):
     else:
         raise ValueError('Uso: configure.py init|name|api|network|tls')
     persist(APP_ENV, lines, 0o644)
-    persist(COMPOSE_ENV, compose, 0o600)
+    if mode != 'api':
+        persist(COMPOSE_ENV, compose, 0o600)
     print('Configuración actualizada. Ejecuta: docker compose up -d --force-recreate')
 
 
 if __name__ == '__main__':
     try:
         run(sys.argv[1] if len(sys.argv) == 2 else '')
-    except (ValueError, RuntimeError, EOFError, KeyboardInterrupt) as exc:
+    except (ValueError, RuntimeError, OSError, EOFError, KeyboardInterrupt) as exc:
         print(f'ERROR: {exc}', file=sys.stderr)
         sys.exit(1)

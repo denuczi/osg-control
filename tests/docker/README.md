@@ -22,6 +22,19 @@ sintaxis anteriores. Las pruebas Python necesitan Python 3 y PyYAML; crean
 configuraciones temporales y no modifican las credenciales de la instalación.
 Comprueban la configuración, los límites de memoria declarados, los montajes,
 el escape de variables de Compose y los permisos de inicialización.
+Las pruebas de configuración IA simulan el catálogo y los errores de los
+proveedores: no usan claves reales ni hacen solicitudes de red. Comprueban
+confirmación, cancelación y conservación de archivos ante errores.
+
+El comando de administrador tiene pruebas específicas con SQLite en memoria.
+Con las dependencias de desarrollo de Composer instaladas y PHP disponible:
+
+```bash
+vendor/bin/phpunit tests/Feature/CreateAdminCommandTest.php
+```
+
+Comprueban creación, actualización, cancelación, contraseñas diferentes,
+validación y cambios concurrentes sin utilizar cuentas de la instalación real.
 
 ## Integración con Docker
 
