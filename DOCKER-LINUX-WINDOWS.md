@@ -148,6 +148,12 @@ en una copia separada; no borres `.env` para saltarte la comprobación.
 
 ## 5. Configuración y administración
 
+**No copies `.env.example` sobre el `.env` de una instalación Docker.** El
+instalador prepara los dos archivos privados de la tabla siguiente. Usa la
+plantilla como referencia; editarla no cambia una instalación ya configurada.
+Para ejemplos de proveedores, Ollama y las diferencias entre Laravel nativo y
+contenedores, consulta [Configuración del entorno](docs/CONFIGURACION-ENTORNO.md).
+
 | Archivo o volumen lógico | Contenido |
 | --- | --- |
 | `.env` | Dirección y puertos de Compose |
@@ -187,6 +193,12 @@ No publiques `secrets/`, archivos `.env` ni respaldos. Git y el contexto de
 construcción los excluyen: conserva esas exclusiones.
 
 ### Proveedor, modelo y clave de IA
+
+El modo `api` del asistente configura proveedores externos. El ejemplo de
+[Ollama local](docs/CONFIGURACION-ENTORNO.md#ejemplo-de-ia-local-con-ollama-sin-docker)
+requiere Laravel y Ollama en el mismo entorno; la composición Docker actual
+no incluye esa integración. No basta con colocar la IP del anfitrión en
+REPORT_AI_LOCAL_URL: la validación del modo local solo admite loopback.
 
 **Lugar de ejecución:** terminal del equipo que aloja el servidor Laravel,
 en Linux o Debian WSL2,
