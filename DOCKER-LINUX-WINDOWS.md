@@ -159,7 +159,10 @@ Compose agrega el prefijo del proyecto a los nombres físicos de los volúmenes.
 No cambies el nombre del proyecto en una instalación existente sin planificar
 el traslado de esos volúmenes.
 
-Ejecuta únicamente el comando correspondiente al cambio que necesitas:
+Ejecuta únicamente el comando correspondiente al cambio que necesitas en la
+**terminal del anfitrión, fuera de los contenedores**: Linux o Debian WSL2,
+desde la carpeta que contiene `compose.yaml`. Los scripts Python necesitan
+Python 3 en ese anfitrión, pero no necesitan Docker Engine en marcha:
 
 ```bash
 python3 scripts/docker/configure.py name
@@ -183,7 +186,11 @@ construcción los excluyen: conserva esas exclusiones.
 
 ### Proveedor, modelo y clave de IA
 
-Ejecuta en el servidor, desde la raíz del proyecto:
+**Lugar de ejecución:** terminal Linux del anfitrión o terminal Debian WSL2,
+fuera de los contenedores y desde la raíz del proyecto. Ejecuta el script
+directamente con Python 3 del anfitrión. La configuración inicial debe existir;
+los contenedores pueden estar encendidos o apagados. Este paso no requiere
+Docker Engine en marcha:
 
 ```bash
 python3 scripts/docker/configure.py api
@@ -211,7 +218,9 @@ La configuración se guarda en `secrets/laravel.env`:
 
 Utiliza el asistente para cambiar estos valores. `.env` en la raíz está destinado
 a Compose; el panel web no tiene un formulario para guardar las claves API.
-Después de configurar proveedor, modelo o clave, recrea los servicios:
+Después de configurar proveedor, modelo o clave, **inicia Docker Engine si está
+detenido**. Desde esa misma terminal del anfitrión y carpeta del proyecto,
+recrea los servicios para que lean el archivo actualizado:
 
 ```bash
 docker compose up -d --force-recreate --no-build --wait --wait-timeout 180
@@ -241,7 +250,10 @@ La cuenta del panel es independiente del usuario Linux, de la cuenta Windows
 y de las credenciales del proveedor de IA. Inicia sesión con correo electrónico
 y contraseña, no con el nombre visible del administrador.
 
-Para crear una cuenta o cambiar el nombre y contraseña de una existente:
+Para crear una cuenta o cambiar el nombre y contraseña de una existente,
+escribe el siguiente comando en la terminal del anfitrión, desde la carpeta
+del proyecto. Docker Engine y `app` deben estar en ejecución; `docker compose
+exec` se encarga de ejecutar PHP dentro del contenedor:
 
 ```bash
 docker compose exec app php artisan nodo:admin
