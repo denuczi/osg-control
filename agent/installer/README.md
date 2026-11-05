@@ -1,12 +1,19 @@
-# OSG Agent v6.0.1 — compilación e instalación en Windows 10/11
+# OSG Nodo Agent — compilación e instalación en Windows 10/11 x64
 
-**Estado:** fuentes y proceso reproducible; los binarios Windows deben compilarse y probarse en Windows. No se ha generado un ejecutable Windows desde Debian.
+El agente se instala en cada computadora Windows que enviará información al
+servidor Laravel. Puedes descargar el instalador desde las
+[publicaciones del proyecto](https://github.com/denuczi/osg-control/releases)
+o compilarlo en Windows siguiendo esta guía. La instalación empaquetada no
+requiere Python en la computadora de destino. Consulta el
+[README principal](../../README.md) para preparar el servidor y conocer la
+arquitectura completa. Las comprobaciones pendientes en Windows se detallan
+más abajo; disponer de un binario publicado no demuestra que estén completadas.
 
 ## Requisitos de la computadora de compilación
 
 - Windows 10/11 **x64** con actualizaciones de seguridad, PowerShell 5.1 o superior.
 - Python **3.15 de 64 bits** (ejecutable `py -3.15`). Solo es necesario en la computadora de compilación.
-- [Inno Setup 7](https://jrsoftware.org/isinfo.php), comando `ISCC.exe` instalado.
+- [Inno Setup](https://jrsoftware.org/isinfo.php), versión 7 preferida o 6 admitida por el script; comando `ISCC.exe` instalado.
 - Acceso al registro PyPI para obtener paquetes de compilación.
 
 ## Construir
@@ -27,18 +34,41 @@ No copies a Windows final un ZIP de scripts Python: llevá únicamente el instal
 
 ## Instalación y vinculación
 
-1. En Debian, generar un código de **un solo uso**: `php artisan nodo:enroll-code --minutes=60`.
-2. Desde un Windows x64, ejecutar `NodoControl-Agent-Setup.exe` como administrador.
-3. En el asistente, indicar IPv4 del servidor Laravel (p. ej. `192.168.0.111`), puerto (`8001`) e ID de vinculación (el código de 48 caracteres). Elegir HTTP o HTTPS.
-4. El asistente valida la ID con Laravel. Si Laravel la acepta, instala/inicia el servicio `NodoControlAgent`, con inicio automático. No queda ventana ni icono en la barra de tareas.
-5. Si el código es inválido o el servidor no es accesible, **mantiene la configuración anterior** y no interrumpe un servicio que estuviera activo.
-6. Si la instalación del servicio falla **después** de consumir el código, usar **Reparar inicio**. No hace falta consumir un segundo código para arrancar la identidad válida que haya quedado guardada.
+1. Prepara el servidor y habilita una dirección accesible desde la LAN según la
+   [guía Docker](../../DOCKER-LINUX-WINDOWS.md#6-acceso-desde-la-lan-y-https).
+2. En cada Windows x64, ejecuta `NodoControl-Agent-Setup.exe` como administrador.
+3. En **Configurar OSG Agent**, indica la IPv4 del servidor Laravel, el puerto
+   configurado y el protocolo HTTP o HTTPS. El puerto inicial de Docker es 8088;
+   utiliza el puerto real si lo cambiaste.
+4. Pulsa **Solicitar vinculación**. El asistente muestra un código de seis dígitos.
+5. En el panel, abre **Equipos → Agregar o administrar equipos**, identifica la
+   solicitud e introduce ese código para aprobarla.
+6. El agente consulta la aprobación y configura el servicio `NodoControlAgent`
+   con inicio automático. Comprueba que el equipo envíe información al panel.
+
+### Código clásico y reparación
+
+El método **Usar código clásico** sigue disponible. Puedes generar el código
+desde el panel o, en un despliegue Docker, desde la carpeta del servidor:
+
+```bash
+docker compose exec app php artisan nodo:enroll-code --minutes=60
+```
+
+Introduce el código de 48 caracteres con la dirección, puerto y protocolo del
+servidor. Si la validación falla, se conserva la configuración anterior. Si
+el servicio no arranca después de guardar una identidad válida, utiliza
+**Reparar inicio** sin consumir otro código.
 
 La ID de vinculación no es la UUID permanente. Laravel emite el código de un solo uso; el agente crea una UUID aleatoria que el servidor confirma. Esto evita que el operador deba copiar UUID, token o contraseñas de la API.
 
 ### Cambiar servidor/IP/ID
 
-Abrir como administrador `Configurar OSG Agent` en el menú Inicio. Ingresar nueva IP, puerto e ID de vinculación válida. La validación ocurre **antes** de detener el servicio o reemplazar credenciales. No se reenvían las muestras de la identidad antigua: quedan en un archivo SQLite local separado.
+Abre como administrador `Configurar OSG Agent` en el menú Inicio. Introduce la
+nueva dirección y puerto y solicita una vinculación para aprobar desde el panel,
+o utiliza un código clásico válido. La validación ocurre antes de detener el
+servicio o reemplazar credenciales. Las muestras de la identidad antigua quedan
+en un archivo SQLite local separado y no se reenvían con la nueva identidad.
 
 **Importante:** una nueva vinculación puede crear otra entrada de dispositivo en Laravel. El administrador debe revocar la identidad antigua desde el servidor cuando ya no se necesite; no borrar su historial sin autorización.
 
