@@ -35,6 +35,7 @@ class DockerDeploymentTest(unittest.TestCase):
         self.assertIn('.env', ignored)
         self.assertIn('secrets', ignored)
         self.assertIn('agent', ignored)
+        self.assertIn('bootstrap/cache', ignored)
     def test_tls_optional_only(self):
         base = yaml.safe_load((ROOT/'compose.yaml').read_text())
         tls = yaml.safe_load((ROOT/'compose.https.yaml').read_text())
@@ -61,7 +62,7 @@ class DockerDeploymentTest(unittest.TestCase):
             with self.assertRaises(ValueError):
                 config.update_network(['APP_NAME=OSG'], ['OSG_PORT=8088'])
     def test_api_key_never_in_stdout(self):
-        with patch('builtins.input',side_effect=['groq','']),patch('getpass.getpass',return_value='SECRET123'):
+        with patch('builtins.input',side_effect=['groq','','s']),patch('getpass.getpass',return_value='SECRET123'),patch.object(config,'verify_model'):
             lines = config.update_api(['NODO_ASSISTANT_ENABLED=false'])
         self.assertEqual(config.get_value(lines,'GROQ_API_KEY'),'SECRET123')
         self.assertEqual(config.get_value(lines,'NODO_ASSISTANT_ENABLED'),'true')

@@ -160,9 +160,11 @@ No cambies el nombre del proyecto en una instalación existente sin planificar
 el traslado de esos volúmenes.
 
 Ejecuta únicamente el comando correspondiente al cambio que necesitas en la
-**terminal del anfitrión, fuera de los contenedores**: Linux o Debian WSL2,
+**terminal del equipo donde instalaste el servidor Laravel, fuera de los
+contenedores**: Linux o Debian WSL2,
 desde la carpeta que contiene `compose.yaml`. Los scripts Python necesitan
-Python 3 en ese anfitrión, pero no necesitan Docker Engine en marcha:
+Python 3 en ese anfitrión, pero no necesitan Docker Engine en marcha. El modo
+`api` necesita conexión HTTPS al proveedor para comprobar el modelo:
 
 ```bash
 python3 scripts/docker/configure.py name
@@ -186,7 +188,8 @@ construcción los excluyen: conserva esas exclusiones.
 
 ### Proveedor, modelo y clave de IA
 
-**Lugar de ejecución:** terminal Linux del anfitrión o terminal Debian WSL2,
+**Lugar de ejecución:** terminal del equipo que aloja el servidor Laravel,
+en Linux o Debian WSL2,
 fuera de los contenedores y desde la raíz del proyecto. Ejecuta el script
 directamente con Python 3 del anfitrión. La configuración inicial debe existir;
 los contenedores pueden estar encendidos o apagados. Este paso no requiere
@@ -199,11 +202,28 @@ python3 scripts/docker/configure.py api
 El asistente solicita:
 
 1. **Proveedor:** `groq`, `openai`, `compatible` o `ninguna`.
-2. **Modelo:** el identificador de un modelo disponible en tu proveedor y cuenta.
-   Los valores propuestos por el script no verifican disponibilidad ni permisos.
+2. **Modelo:** el identificador exacto de un modelo de tu proveedor. Los valores
+   propuestos se comprueban con el catálogo antes de guardar, igual que los
+   introducidos manualmente.
 3. **Endpoint HTTPS:** solo para `compatible`, con el formato que indica el
    asistente. Debe ser una dirección pública admitida por la validación.
 4. **Clave API:** se introduce sin eco en la terminal.
+
+Después muestra un resumen con la clave oculta y pregunta si deseas verificar
+y guardar. **Enter o una respuesta negativa cancelan sin modificar archivos ni
+contactar al proveedor**. Al confirmar consulta el catálogo `GET /models` mediante
+HTTPS con esa clave; no envía una consulta de generación. Si el identificador no
+está disponible o la comprobación falla por autenticación, red, TLS, redirección
+o respuesta inválida, se conservan los archivos anteriores. Corrige los datos y
+vuelve a ejecutar el asistente.
+
+Algunos proveedores compatibles no exponen ese catálogo. Solo si devuelven HTTP
+404/405 se ofrece guardar sin verificar, escribiendo `GUARDAR_SIN_VERIFICAR`.
+Esta excepción no demuestra que el modelo o la generación funcionen. Encontrar
+un modelo en el catálogo tampoco acredita cuotas, saldo o acceso a todas sus
+funciones. Las API consultadas están documentadas por
+[Groq](https://console.groq.com/docs/models) y
+[OpenAI](https://developers.openai.com/api/reference/resources/models/methods/list).
 
 La configuración se guarda en `secrets/laravel.env`:
 
@@ -238,11 +258,12 @@ Hay dos funciones con controles diferentes:
   Esta preferencia se guarda en la base de datos y requiere credenciales
   configuradas. No necesita recrear contenedores al cambiarla desde el panel.
 
-Elegir `ninguna` en el script solo cambia `NODO_ASSISTANT_ENABLED` a `false` y
-conserva las credenciales anteriores. Para dejar de usar IA también en los PDF,
+Elegir `ninguna` en el script cambia `NODO_ASSISTANT_ENABLED` a `false` después
+de una confirmación con No por defecto y conserva las credenciales anteriores.
+Para dejar de usar IA también en los PDF,
 desactiva la opción de conclusiones desde el panel. Un estado de «Credenciales
-configuradas» indica que existen los valores requeridos; no acredita una llamada
-exitosa al proveedor. Comprueba la integración con una consulta o informe.
+configuradas» indica que existen los valores requeridos; no acredita generación
+correcta ni cuotas disponibles. Comprueba la integración con una consulta o informe.
 
 ### Cuentas, nombre visible y contraseña del panel
 
@@ -259,8 +280,13 @@ exec` se encarga de ejecutar PHP dentro del contenedor:
 docker compose exec app php artisan nodo:admin
 ```
 
-El comando solicita nombre, correo y contraseña. Esta última debe tener al
-menos 12 caracteres y no se muestra mientras se introduce.
+El comando solicita nombre, correo y contraseña. Avisa si creará una cuenta
+nueva o actualizará una existente. La contraseña debe tener al menos 12 caracteres
+y hasta 72 bytes (límite de bcrypt); debe repetirse y no se muestra al introducirla.
+Muestra un resumen de acción, nombre y correo, y pide confirmación con **No por
+defecto** antes de escribir. Si cancelas o las contraseñas no coinciden, no cambia
+la cuenta. Rechaza la ejecución no interactiva. Si otra operación modificó la
+cuenta mientras respondías, se detiene para que revises los datos nuevamente.
 
 - **Mismo correo:** actualiza el nombre y la contraseña de esa cuenta.
 - **Correo diferente:** crea otra cuenta administradora; la cuenta anterior
