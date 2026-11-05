@@ -167,9 +167,8 @@ python3 scripts/docker/configure.py api
 python3 scripts/docker/configure.py network
 ```
 
-`api` permite configurar Groq, OpenAI, un endpoint compatible o desactivar la IA.
-La clave se solicita sin mostrarla en pantalla. Configurar credenciales no
-sustituye los controles de activación del panel.
+`api` permite configurar Groq, OpenAI o un endpoint compatible. Los pasos
+detallados y el alcance de la opción `ninguna` se explican más abajo.
 
 Después de cambiar configuración, recrea los servicios para actualizar montajes
 y variables:
@@ -181,6 +180,90 @@ docker compose up -d --force-recreate --no-build --wait --wait-timeout 180
 APP_KEY se conserva. Perderla puede impedir descifrar información o sesiones.
 No publiques `secrets/`, archivos `.env` ni respaldos. Git y el contexto de
 construcción los excluyen: conserva esas exclusiones.
+
+### Proveedor, modelo y clave de IA
+
+Ejecuta en el servidor, desde la raíz del proyecto:
+
+```bash
+python3 scripts/docker/configure.py api
+```
+
+El asistente solicita:
+
+1. **Proveedor:** `groq`, `openai`, `compatible` o `ninguna`.
+2. **Modelo:** el identificador de un modelo disponible en tu proveedor y cuenta.
+   Los valores propuestos por el script no verifican disponibilidad ni permisos.
+3. **Endpoint HTTPS:** solo para `compatible`, con el formato que indica el
+   asistente. Debe ser una dirección pública admitida por la validación.
+4. **Clave API:** se introduce sin eco en la terminal.
+
+La configuración se guarda en `secrets/laravel.env`:
+
+| Dato | Variable |
+| --- | --- |
+| Proveedor | `REPORT_AI_PROVIDER` |
+| Modelo | `REPORT_AI_MODEL` |
+| Clave de Groq | `GROQ_API_KEY` |
+| Clave de OpenAI | `OPENAI_API_KEY` |
+| Clave y URL compatibles | `REPORT_AI_COMPATIBLE_KEY`, `REPORT_AI_COMPATIBLE_URL` |
+| Habilitación del asistente conversacional | `NODO_ASSISTANT_ENABLED` |
+
+Utiliza el asistente para cambiar estos valores. `.env` en la raíz está destinado
+a Compose; el panel web no tiene un formulario para guardar las claves API.
+Después de configurar proveedor, modelo o clave, recrea los servicios:
+
+```bash
+docker compose up -d --force-recreate --no-build --wait --wait-timeout 180
+```
+
+Con HTTPS, incluye ambos archivos Compose como en la sección de TLS.
+
+Hay dos funciones con controles diferentes:
+
+- **Asistente conversacional:** el script lo habilita al configurar un proveedor.
+  El panel permite ajustar sus límites en **Configuración → Rendimiento del
+  asistente IA**, pero ese formulario no cambia proveedor, modelo ni clave.
+- **Conclusiones IA de los PDF:** actívalas en **Configuración → Informes PDF →
+  Conclusión y recomendaciones mediante IA** y pulsa **Guardar configuración**.
+  Esta preferencia se guarda en la base de datos y requiere credenciales
+  configuradas. No necesita recrear contenedores al cambiarla desde el panel.
+
+Elegir `ninguna` en el script solo cambia `NODO_ASSISTANT_ENABLED` a `false` y
+conserva las credenciales anteriores. Para dejar de usar IA también en los PDF,
+desactiva la opción de conclusiones desde el panel. Un estado de «Credenciales
+configuradas» indica que existen los valores requeridos; no acredita una llamada
+exitosa al proveedor. Comprueba la integración con una consulta o informe.
+
+### Cuentas, nombre visible y contraseña del panel
+
+La cuenta del panel es independiente del usuario Linux, de la cuenta Windows
+y de las credenciales del proveedor de IA. Inicia sesión con correo electrónico
+y contraseña, no con el nombre visible del administrador.
+
+Para crear una cuenta o cambiar el nombre y contraseña de una existente:
+
+```bash
+docker compose exec app php artisan nodo:admin
+```
+
+El comando solicita nombre, correo y contraseña. Esta última debe tener al
+menos 12 caracteres y no se muestra mientras se introduce.
+
+- **Mismo correo:** actualiza el nombre y la contraseña de esa cuenta.
+- **Correo diferente:** crea otra cuenta administradora; la cuenta anterior
+  sigue activa. No sirve para cambiar el correo de una cuenta existente ni
+  para revocar su acceso.
+- **Cambiar de cuenta al navegar:** cierra sesión y entra con las credenciales
+  de la otra cuenta.
+
+Las cuentas y los hashes de contraseña se guardan en SQLite. Actualmente no hay
+un formulario web de gestión de usuarios, un comando específico para cambiar
+el correo o eliminar una cuenta, ni recuperación por correo. Para recuperar
+acceso a una cuenta existente, repite `nodo:admin` con su mismo correo. Cambiar
+sus credenciales no requiere reconstruir imágenes ni recrear servicios.
+
+`configure.py name` cambia el nombre de la aplicación, no el de la cuenta.
 
 ## 6. Acceso desde la LAN y HTTPS
 

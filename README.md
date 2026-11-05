@@ -259,14 +259,64 @@ Ejecuta estos comandos desde la carpeta del servidor:
 | --- | --- |
 | Crear o actualizar un administrador | `docker compose exec app php artisan nodo:admin` |
 | Cambiar el nombre de la aplicación | `python3 scripts/docker/configure.py name` |
-| Configurar o desactivar IA | `python3 scripts/docker/configure.py api` |
+| Configurar proveedor, modelo y clave de IA | `python3 scripts/docker/configure.py api` |
 | Configurar dirección y puerto | `python3 scripts/docker/configure.py network` |
 | Diagnosticar servidor, HTTP y PDF | `bash scripts/docker/doctor.sh` |
 | Crear un respaldo | `bash scripts/docker/backup.sh` |
 | Consultar registros | `docker compose logs --tail=100 init app web worker scheduler` |
 | Actualizar, detener o recuperar datos | [Operación y respaldos](DOCKER-LINUX-WINDOWS.md#7-actualizaciones-datos-y-respaldos) |
 
-Después de cambiar configuración, recrea los servicios como indica la guía.
+### Configurar el proveedor, el modelo y la clave de IA
+
+En la terminal del servidor, desde la carpeta del proyecto, ejecuta:
+
+```bash
+python3 scripts/docker/configure.py api
+```
+
+El asistente pregunta por el proveedor (`groq`, `openai` o `compatible`), el
+identificador del modelo y la clave API. Para un proveedor compatible también
+solicita el endpoint HTTPS. La clave se introduce sin mostrarse en pantalla y
+se guarda en **`secrets/laravel.env`**, junto con el proveedor y el modelo.
+La pantalla de configuración del panel no permite introducir estas credenciales.
+
+Aplica los cambios recreando los servicios:
+
+```bash
+docker compose up -d --force-recreate --no-build --wait --wait-timeout 180
+```
+
+Para incluir conclusiones de IA en los PDF, entra después en **Configuración →
+Informes PDF**, activa **Conclusión y recomendaciones mediante IA** y pulsa
+**Guardar configuración**. El asistente conversacional usa la configuración
+del servidor; sus límites de tiempo y llamadas se ajustan en **Configuración →
+Rendimiento del asistente IA**.
+
+La opción `ninguna` del asistente de terminal desactiva el asistente
+conversacional y conserva las credenciales. Para desactivar también las
+conclusiones IA de los PDF, desmarca su opción en el panel. Consulta los
+[detalles de configuración](DOCKER-LINUX-WINDOWS.md#proveedor-modelo-y-clave-de-ia).
+
+### Cambiar nombre o contraseña del administrador
+
+El inicio de sesión utiliza **correo electrónico y contraseña**. Desde la
+terminal del servidor:
+
+```bash
+docker compose exec app php artisan nodo:admin
+```
+
+Introduce el nombre visible, el **mismo correo de la cuenta existente** y la
+nueva contraseña, de al menos 12 caracteres. Así se actualizan el nombre y la
+contraseña de esa cuenta. Si introduces un correo distinto, se crea otra cuenta
+administradora y la anterior permanece activa: no se cambia su correo.
+
+Actualmente no hay una pantalla web para gestionar usuarios ni un flujo de
+recuperación de contraseña por correo. Para usar otra cuenta ya creada, cierra
+sesión en el panel e inicia sesión con su correo y contraseña. Estos datos se
+guardan en la base de datos, no en el archivo de claves de IA.
+
+Después de cambiar configuración del servidor, recrea los servicios como indica la guía.
 Con el perfil HTTPS, incluye también `compose.https.yaml` en las operaciones
 correspondientes.
 
