@@ -191,15 +191,20 @@ def update_api(lines):
 
 
 def update_network(app_lines, compose_lines):
-    print('Configura desde dónde se podrá acceder al servidor OSG Nodo Control (Laravel).')
-    print('1) Solo desde este mismo servidor: panel en esta computadora; los agentes de otras computadoras no podrán conectarse.')
-    print('2) Desde otras computadoras de tu red (LAN): permite conectar sus agentes Windows y abrir el panel desde esos equipos.')
+    print('\nAcceso al servidor OSG Nodo Control (Laravel)\n')
+    print('1) Solo desde este mismo servidor')
+    print('   El panel se abrirá únicamente en esta computadora.')
+    print('   Los agentes de otras computadoras no podrán conectarse.\n')
+    print('2) Desde otras computadoras de tu red (LAN)')
+    print('   Permite abrir el panel y conectar agentes Windows')
+    print('   desde otras computadoras de tu red.\n')
     default = '1' if get_value(compose_lines, 'OSG_BIND_IP', '127.0.0.1') == '127.0.0.1' else '2'
     choice = question('Elige una opción: 1 o 2', default).lower()
     # Keep the old answers usable for existing operators and scripts.
     mode = {'1': 'local', '2': 'lan', 'local': 'local', 'lan': 'lan'}.get(choice)
     if mode is None:
         raise ValueError('Elige 1 para acceso solo desde este servidor, o 2 para conectar otras computadoras de la red.')
+    print()
     port = question('Puerto HTTP del panel y de la conexión de los agentes', get_value(compose_lines, 'OSG_PORT', '8088'))
     if not port.isdecimal() or not 1024 <= int(port) <= 65535:
         raise ValueError('Puerto inválido (1024-65535)')
