@@ -257,6 +257,13 @@ son para la computadora de compilación, no para cada equipo de destino.
 
 ## Administración habitual
 
+Con Docker, `setup.sh` genera los archivos privados: `.env` configura Compose
+y `secrets/laravel.env` configura Laravel. **No tienes que completar manualmente
+`.env.example` ni copiarlo sobre esos archivos.** La plantilla sirve de referencia
+y sus cambios no se aplican automáticamente a una instalación existente.
+Consulta la [guía de archivos de entorno y Ollama](docs/CONFIGURACION-ENTORNO.md)
+para ajustes avanzados y ejemplos de IA local.
+
 Escribe estos comandos en la **terminal del equipo donde instalaste el servidor
 OSG Nodo Control (Laravel)**, desde la carpeta del
 proyecto que contiene `compose.yaml`: la terminal Linux o, en Windows, la
@@ -358,6 +365,7 @@ y protege `secrets/` y los respaldos: contienen credenciales. **No ejecutes
 
 - [Instalación Docker completa: Linux, WSL2, LAN, HTTPS y mantenimiento](DOCKER-LINUX-WINDOWS.md).
 - [Compilación y operación del agente Windows](agent/installer/README.md).
+- [Archivos de entorno, proveedores de IA y ejemplo con Ollama](docs/CONFIGURACION-ENTORNO.md).
 - [Pruebas estáticas y de integración Docker](tests/docker/README.md).
 - Pruebas Laravel en `tests/Feature`, pruebas del agente en `agent/tests`
   y pruebas del frontend en `tests/frontend`.
