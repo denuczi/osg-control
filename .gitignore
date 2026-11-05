@@ -5,6 +5,8 @@
 /public/build
 /public/hot
 /.env
+/.env.*
+!/.env.example
 /database/*.sqlite
 /database/*.sqlite-*
 /storage/*.key
@@ -18,3 +20,10 @@
 !/storage/framework/views/.gitignore
 /agent/.nodo-agent.json
 /agent/.venv
+
+# Docker runtime (never commit credentials)
+/secrets/
+/backups/
+/out/
+__pycache__/
+*.py[cod]

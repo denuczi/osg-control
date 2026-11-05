@@ -1,0 +1,6 @@
+# HTTPS with an externally supplied, valid certificate (including intermediate chain).
+:8443 {
+    tls /etc/caddy/certs/fullchain.pem /etc/caddy/certs/privkey.pem
+    encode zstd gzip
+    reverse_proxy web:8080
+}
