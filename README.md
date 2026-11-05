@@ -213,7 +213,9 @@ computadoras de la red, configura una dirección accesible por ellas.
 
 - Para HTTPS, sigue la [configuración de certificados](DOCKER-LINUX-WINDOWS.md#6-acceso-desde-la-lan-y-https).
 - Para un laboratorio con HTTP sin cifrado, ejecuta los siguientes comandos
-  en el servidor y selecciona `lan` en el asistente. Este solicita aceptar
+  en el servidor y selecciona **2 — Desde otras computadoras de tu red (LAN)**.
+  La opción **1 — Solo desde este mismo servidor** impide que se conecten
+  agentes instalados en otras computadoras. El asistente solicita aceptar
   expresamente el uso de HTTP:
 
 ```bash

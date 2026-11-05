@@ -191,17 +191,23 @@ def update_api(lines):
 
 
 def update_network(app_lines, compose_lines):
-    mode = question('Acceso (local/lan)', 'local').lower()
-    if mode not in ('local', 'lan'):
-        raise ValueError('Selecciona local o lan')
-    port = question('Puerto HTTP', get_value(compose_lines, 'OSG_PORT', '8088'))
+    print('Configura desde dónde se podrá acceder al servidor OSG Nodo Control (Laravel).')
+    print('1) Solo desde este mismo servidor: panel en esta computadora; los agentes de otras computadoras no podrán conectarse.')
+    print('2) Desde otras computadoras de tu red (LAN): permite conectar sus agentes Windows y abrir el panel desde esos equipos.')
+    default = '1' if get_value(compose_lines, 'OSG_BIND_IP', '127.0.0.1') == '127.0.0.1' else '2'
+    choice = question('Elige una opción: 1 o 2', default).lower()
+    # Keep the old answers usable for existing operators and scripts.
+    mode = {'1': 'local', '2': 'lan', 'local': 'local', 'lan': 'lan'}.get(choice)
+    if mode is None:
+        raise ValueError('Elige 1 para acceso solo desde este servidor, o 2 para conectar otras computadoras de la red.')
+    port = question('Puerto HTTP del panel y de la conexión de los agentes', get_value(compose_lines, 'OSG_PORT', '8088'))
     if not port.isdecimal() or not 1024 <= int(port) <= 65535:
         raise ValueError('Puerto inválido (1024-65535)')
     if mode == 'lan':
         print('ATENCIÓN: LAN HTTP SIN CIFRAR. Solo para laboratorio con red privada y control de firewall.')
         if question('Escribe EXACTAMENTE ACEPTO_HTTP_LAN para confirmar') != 'ACEPTO_HTTP_LAN':
             raise ValueError('No se habilitó HTTP en LAN')
-        host = question('IP o nombre del servidor accesible por los agentes')
+        host = question('IP o nombre del equipo donde instalaste Laravel, accesible desde los Windows (ej. 192.168.1.10)')
         if not host or len(host) > 180 or not re.fullmatch(r'[A-Za-z0-9.-]+', host):
             raise ValueError('Host inválido')
         set_value(compose_lines, 'OSG_BIND_IP', '0.0.0.0')
