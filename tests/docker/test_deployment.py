@@ -61,6 +61,27 @@ class DockerDeploymentTest(unittest.TestCase):
         with patch('builtins.input',side_effect=['lan','','NO']):
             with self.assertRaises(ValueError):
                 config.update_network(['APP_NAME=OSG'], ['OSG_PORT=8088'])
+
+    def test_network_option_one_keeps_access_on_server_only(self):
+        with patch('builtins.input', side_effect=['1', '8090']):
+            app, compose = config.update_network([], ['OSG_BIND_IP=0.0.0.0', 'OSG_PORT=8088'])
+        self.assertEqual(config.get_value(compose, 'OSG_BIND_IP'), '127.0.0.1')
+        self.assertEqual(config.get_value(app, 'APP_URL'), 'http://127.0.0.1:8090')
+
+    def test_network_option_two_requires_http_consent(self):
+        with patch('builtins.input', side_effect=['2', '', 'NO']):
+            with self.assertRaises(ValueError):
+                config.update_network([], ['OSG_PORT=8088'])
+        with patch('builtins.input', side_effect=['2', '', 'ACEPTO_HTTP_LAN', '192.168.1.10']):
+            app, compose = config.update_network([], ['OSG_PORT=8088'])
+        self.assertEqual(config.get_value(compose, 'OSG_BIND_IP'), '0.0.0.0')
+        self.assertEqual(config.get_value(app, 'APP_URL'), 'http://192.168.1.10:8088')
+
+    def test_network_default_preserves_existing_lan_access(self):
+        with patch('builtins.input', side_effect=['', '', 'ACEPTO_HTTP_LAN', '192.168.1.10']):
+            app, compose = config.update_network([], ['OSG_BIND_IP=0.0.0.0', 'OSG_PORT=8088'])
+        self.assertEqual(config.get_value(compose, 'OSG_BIND_IP'), '0.0.0.0')
+        self.assertEqual(config.get_value(app, 'APP_URL'), 'http://192.168.1.10:8088')
     def test_api_key_never_in_stdout(self):
         with patch('builtins.input',side_effect=['groq','','s']),patch('getpass.getpass',return_value='SECRET123'),patch.object(config,'verify_model'):
             lines = config.update_api(['NODO_ASSISTANT_ENABLED=false'])

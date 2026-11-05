@@ -209,11 +209,15 @@ seguir ejecutándose. El puerto 8088 es el valor inicial y puede cambiarse.
 ### 1. Hacer accesible el servidor
 
 La instalación inicial escucha únicamente en `127.0.0.1`. Antes de vincular
-computadoras de la red, configura una dirección accesible por ellas.
+computadoras de la red, configura una dirección accesible por ellas. Ese modo
+inicial, **opción 1**, permite probar el panel en el propio servidor antes de
+pasar a la **opción 2** para conectar agentes de otras computadoras.
 
 - Para HTTPS, sigue la [configuración de certificados](DOCKER-LINUX-WINDOWS.md#6-acceso-desde-la-lan-y-https).
 - Para un laboratorio con HTTP sin cifrado, ejecuta los siguientes comandos
-  en el servidor y selecciona `lan` en el asistente. Este solicita aceptar
+  en el servidor y selecciona **2 — Desde otras computadoras de tu red (LAN)**.
+  La opción **1 — Solo desde este mismo servidor** impide que se conecten
+  agentes instalados en otras computadoras. El asistente solicita aceptar
   expresamente el uso de HTTP:
 
 ```bash

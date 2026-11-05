@@ -307,8 +307,20 @@ sus credenciales no requiere reconstruir imágenes ni recrear servicios.
 
 ### HTTP para laboratorio
 
-Ejecuta `python3 scripts/docker/configure.py network`, selecciona `lan` y
-confirma `ACEPTO_HTTP_LAN` solo si aceptas transmitir credenciales y datos sin
+Ejecuta `python3 scripts/docker/configure.py network`. El menú distingue:
+
+- **1 — Solo desde este mismo servidor:** permite abrir el panel en esa
+  computadora; los agentes de otros equipos no pueden conectarse. Es la opción
+  predeterminada en una instalación nueva y permite probar el panel antes de
+  habilitar el acceso de otros equipos con la opción 2.
+- **2 — Desde otras computadoras de tu red (LAN):** permite acceder al panel
+  y conectar agentes desde otros equipos de la red, sujetos al firewall.
+
+Para conectar tus agentes Windows, elige **2**. La opción propuesta al pulsar
+Enter conserva el tipo de acceso configurado actualmente. Las respuestas
+anteriores `local` y `lan` siguen aceptándose como equivalentes de 1 y 2.
+
+Confirma `ACEPTO_HTTP_LAN` solo si aceptas transmitir credenciales y datos sin
 cifrado en esa red. Indica una IP o nombre del servidor que los agentes puedan
 alcanzar: `127.0.0.1` en un agente apunta al propio agente.
 
