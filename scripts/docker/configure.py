@@ -193,12 +193,19 @@ def update_api(lines):
 def update_network(app_lines, compose_lines):
     print('\nAcceso al servidor OSG Nodo Control (Laravel)\n')
     print('1) Solo desde este mismo servidor')
+    print('   Es la opción predeterminada en una instalación nueva.')
     print('   El panel se abrirá únicamente en esta computadora.')
-    print('   Los agentes de otras computadoras no podrán conectarse.\n')
+    print('   Los agentes de otras computadoras no podrán conectarse.')
+    print('   Sirve para probar el panel antes de pasar a la opción 2.\n')
     print('2) Desde otras computadoras de tu red (LAN)')
     print('   Permite abrir el panel y conectar agentes Windows')
-    print('   desde otras computadoras de tu red.\n')
+    print('   desde otras computadoras de tu red.')
+    print('   Elígela cuando estés listo para vincular esos agentes.\n')
     default = '1' if get_value(compose_lines, 'OSG_BIND_IP', '127.0.0.1') == '127.0.0.1' else '2'
+    if default == '1':
+        print('Si pulsas Enter, se mantiene la opción 1 (solo este servidor).\n')
+    else:
+        print('Si pulsas Enter, se mantiene la opción 2 (otras computadoras).\n')
     choice = question('Elige una opción: 1 o 2', default).lower()
     # Keep the old answers usable for existing operators and scripts.
     mode = {'1': 'local', '2': 'lan', 'local': 'local', 'lan': 'lan'}.get(choice)

@@ -310,7 +310,9 @@ sus credenciales no requiere reconstruir imágenes ni recrear servicios.
 Ejecuta `python3 scripts/docker/configure.py network`. El menú distingue:
 
 - **1 — Solo desde este mismo servidor:** permite abrir el panel en esa
-  computadora; los agentes de otros equipos no pueden conectarse.
+  computadora; los agentes de otros equipos no pueden conectarse. Es la opción
+  predeterminada en una instalación nueva y permite probar el panel antes de
+  habilitar el acceso de otros equipos con la opción 2.
 - **2 — Desde otras computadoras de tu red (LAN):** permite acceder al panel
   y conectar agentes desde otros equipos de la red, sujetos al firewall.
 
