@@ -253,7 +253,11 @@ son para la computadora de compilación, no para cada equipo de destino.
 
 ## Administración habitual
 
-Ejecuta estos comandos desde la carpeta del servidor:
+Escribe estos comandos en la **terminal del anfitrión**, desde la carpeta del
+proyecto que contiene `compose.yaml`: la terminal Linux o, en Windows, la
+terminal de Debian WSL2. Se escriben fuera de los contenedores. Los comandos
+`docker compose exec` se introducen también allí; Docker ejecuta la operación
+indicada dentro del servicio correspondiente.
 
 | Necesidad | Comando o documentación |
 | --- | --- |
@@ -268,7 +272,10 @@ Ejecuta estos comandos desde la carpeta del servidor:
 
 ### Configurar el proveedor, el modelo y la clave de IA
 
-En la terminal del servidor, desde la carpeta del proyecto, ejecuta:
+**Este paso se ejecuta fuera de Docker**, en la terminal Linux o Debian WSL2,
+desde la carpeta del proyecto. Requiere Python 3 en ese anfitrión y una
+instalación ya configurada. Puede hacerse con los contenedores encendidos o
+apagados; no necesita Docker Engine en marcha porque solo modifica un archivo:
 
 ```bash
 python3 scripts/docker/configure.py api
@@ -280,7 +287,8 @@ solicita el endpoint HTTPS. La clave se introduce sin mostrarse en pantalla y
 se guarda en **`secrets/laravel.env`**, junto con el proveedor y el modelo.
 La pantalla de configuración del panel no permite introducir estas credenciales.
 
-Aplica los cambios recreando los servicios:
+Cuando termines, **Docker Engine debe estar en marcha**. En esa misma terminal
+del anfitrión y carpeta del proyecto, aplica los cambios recreando los servicios:
 
 ```bash
 docker compose up -d --force-recreate --no-build --wait --wait-timeout 180
@@ -300,7 +308,8 @@ conclusiones IA de los PDF, desmarca su opción en el panel. Consulta los
 ### Cambiar nombre o contraseña del administrador
 
 El inicio de sesión utiliza **correo electrónico y contraseña**. Desde la
-terminal del servidor:
+terminal del anfitrión, desde la carpeta del proyecto y con Docker Engine y el
+servicio `app` en ejecución:
 
 ```bash
 docker compose exec app php artisan nodo:admin
