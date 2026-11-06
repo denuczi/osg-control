@@ -21,7 +21,7 @@ comunicar su resultado.
 
 | Componente | Dónde se instala | Responsabilidad |
 | --- | --- | --- |
-| **Servidor OSG Nodo Control** | Un equipo servidor Linux, o Debian dentro de WSL2 en Windows | Alojar Laravel, el panel web, la API, la base de datos, las tareas de mantenimiento y la generación de informes. Debe ser accesible por los agentes. |
+| **Servidor OSG Nodo Control** | Un equipo servidor Linux, o una distribución Linux dentro de WSL2 en Windows | Alojar Laravel, el panel web, la API, la base de datos, las tareas de mantenimiento y la generación de informes. Debe ser accesible por los agentes. |
 | **OSG Nodo Agent** | Cada computadora Windows 10/11 x64 que se quiere administrar | Recoger métricas, inventario y eventos; enviarlos al servidor; recibir configuración y ejecutar las acciones autorizadas. |
 | **Navegador del administrador** | El servidor u otro equipo con acceso al panel | Consultar la información, aprobar vinculaciones, administrar equipos y solicitar informes u órdenes. |
 
@@ -226,8 +226,8 @@ class node_dashboard,node_web_pages,node_admin,node_windows,node_chat_provider t
 
 ### Para el servidor
 
-- Linux con Docker Engine, o Windows 10/11 con **Debian en WSL2** y Docker
-  Engine instalado dentro de Debian.
+- Una distribución Linux con Docker Engine, o Windows 10/11 con **una
+  distribución Linux en WSL2** y Docker Engine instalado dentro de ella.
 - El complemento **Docker Compose**, Buildx, Git, Python 3, curl, tar y sha256sum.
 - Acceso a Internet para la primera construcción y las actualizaciones de imágenes
   y dependencias; conectividad con las computadoras que usarán el agente.
@@ -255,12 +255,20 @@ guía explica el límite propuesto de 5 GB para WSL2 y sus condiciones.
 
 ### 1. Preparar Docker y las herramientas
 
+El proyecto no está limitado a Debian: puede ejecutarse en otras distribuciones
+Linux que cumplan los requisitos de Docker y de las herramientas del anfitrión.
+Los ejemplos de instalación usan distribuciones basadas en Debian, como
+**Debian, Ubuntu y Linux Mint**. En otras distribuciones, adapta el gestor de
+paquetes y los nombres de los paquetes. Para Windows con WSL2, la guía toma
+Debian como ejemplo.
+
 Instala Docker Engine, Buildx y Compose siguiendo la
 [documentación oficial para Debian](https://docs.docker.com/engine/install/debian/)
 o la correspondiente a tu distribución. Si usas Windows, sigue primero la
 [preparación de Debian WSL2](DOCKER-LINUX-WINDOWS.md#3-preparar-windows-con-wsl2).
 
-En Debian, instala las herramientas auxiliares y comprueba el acceso a Docker:
+En Debian, Ubuntu, Linux Mint y otras distribuciones basadas en Debian,
+instala las herramientas auxiliares con `apt` y comprueba el acceso a Docker:
 
 ```bash
 sudo apt-get update
@@ -275,7 +283,7 @@ el acceso al socket si fuera necesario.
 
 ### 2. Clonar y ejecutar el instalador
 
-Desde Linux o la terminal Debian WSL2:
+Desde la terminal Linux o la de tu distribución Linux en WSL2:
 
 ```bash
 git clone https://github.com/denuczi/osg-control.git
@@ -373,8 +381,8 @@ para ajustes avanzados y ejemplos de IA local.
 Escribe estos comandos en la **terminal del equipo donde instalaste el servidor
 OSG Nodo Control (Laravel)**, desde la carpeta del
 proyecto que contiene `compose.yaml`: la terminal Linux o, en Windows, la
-terminal de Debian WSL2. Se escriben fuera de los contenedores. Los comandos
-`docker compose exec` se introducen también allí; Docker ejecuta la operación
+terminal de tu distribución Linux en WSL2. Se escriben fuera de los contenedores.
+Los comandos `docker compose exec` se introducen también allí; Docker ejecuta la operación
 indicada dentro del servicio correspondiente.
 
 | Necesidad | Comando o documentación |
@@ -391,7 +399,7 @@ indicada dentro del servicio correspondiente.
 ### Configurar el proveedor, el modelo y la clave de IA
 
 **Este paso se ejecuta en el equipo del servidor Laravel, fuera de los
-contenedores**, en la terminal Linux o Debian WSL2,
+contenedores**, en la terminal Linux o la de tu distribución Linux en WSL2,
 desde la carpeta del proyecto. Requiere Python 3 en ese anfitrión y una
 instalación ya configurada. Puede hacerse con los contenedores encendidos o
 apagados y no necesita Docker Engine en marcha. La comprobación del modelo sí
